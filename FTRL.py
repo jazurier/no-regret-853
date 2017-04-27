@@ -10,10 +10,10 @@ mixNE_ZS_p2 = -1*np.array([[2,-1],[-1,0]])
 # matrix_p2 = prisoner_dilemma_p2
 matrix_p1 = mixNE_ZS_p1
 matrix_p2 = mixNE_ZS_p2
-epochs = 100
+epochs = 1000
 tolerance = .001
 
-eta_recip = np.sqrt(epochs*1./(1-(1/np.sqrt(2))))
+eta_recip = np.sqrt(2*epochs*1./(1.-(1./2.)))
 def quad_regularizer(n_vector):
 	nm = np.linalg.norm(n_vector)
 	nm = nm**2
@@ -27,6 +27,12 @@ class player():
 		self.action_history.append(action)
 	def get_dec(self):
 		return self.action_history[-1]
+	def get_avg(self):
+		vec = self.action_history[0]
+		vec = vec - self.action_history[0]
+		for vector in self.action_history:
+			vec += vector
+		return vec/(len(self.action_history))
 p1 = player(matrix_p1)
 p2 = player(matrix_p2)
 
@@ -60,10 +66,10 @@ def argmax_function(first_player,second_player,which_player_am_I):
 		if g<cumdum[i]:
 			act[i]=1
 			break
-	print 'BLAH'
-	print act,amin
-	print opt(amin)
-	print opt([0.25,0.75])
+	# print 'BLAH',which_player_am_I
+	# print act,amin
+	# print opt(amin)
+	# print opt([0,1])
 	# return act
 	return amin
 
@@ -86,5 +92,6 @@ def find_Nash(p1,p2):
 			print t
 		p1,p2 = update_FTRL(p1,p2)
 		t+=1
-	return p1.get_dec(),p2.get_dec()
+	print np.sum(np.transpose(p1.action_history)[0])
+	return p1.get_dec(),p2.get_dec(),'AVG',p1.get_avg(),p2.get_avg()
 print find_Nash(p1,p2)
