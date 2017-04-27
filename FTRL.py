@@ -14,10 +14,12 @@ epochs = 1000
 tolerance = .001
 
 eta_recip = np.sqrt(2*epochs*1./(1.-(1./2.)))
+
 def quad_regularizer(n_vector):
 	nm = np.linalg.norm(n_vector)
 	nm = nm**2
 	return 0.5*nm
+
 class player():
 
 	def __init__(self, payoff_matrix):
@@ -33,6 +35,7 @@ class player():
 		for vector in self.action_history:
 			vec += vector
 		return vec/(len(self.action_history))
+
 p1 = player(matrix_p1)
 p2 = player(matrix_p2)
 
@@ -55,21 +58,11 @@ def argmax_function(first_player,second_player,which_player_am_I):
 	bounds = [(0,1) for _ in range(2)] #make this adaptive
 
 	amin = scipy.optimize.fmin_slsqp(opt, x0 = [0.5,0.5], eqcons = [L1_norm_constraint], bounds = bounds,iprint=0)
-	# print amin
-	# print opt(amin)
-	# print opt([0,1])
-	g = np.random.rand()
-	# print g
-	cumdum = np.cumsum(amin)
-	act = np.zeros(len(cumdum))
-	for i in range(len(cumdum)):
-		if g<cumdum[i]:
-			act[i]=1
-			break
-	# print 'BLAH',which_player_am_I
+	act = np.random.choice(range(2), amin)
+
 	# print act,amin
 	# print opt(amin)
-	# print opt([0,1])
+	# print opt([0.25,0.75])
 	# return act
 	return amin
 
@@ -80,6 +73,7 @@ def update_FTRL(pl1,pl2):
 	pl1.add_action(newp1act)
 	pl2.add_action(newp2act)
 	return pl1,pl2
+
 def find_Nash(p1,p2):
 	t=0
 	while t<epochs:
