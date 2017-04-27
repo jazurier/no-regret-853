@@ -1,0 +1,90 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import scipy.optimize
+prisoner_dilemma_p1 = np.array([[-1,-3],[0,-2]])
+prisoner_dilemma_p2 = np.array([[-1,-3],[0,-2]])
+mixNE_ZS_p1 = np.array([[2,-1],[-1,0]])
+mixNE_ZS_p2 = -1*np.array([[2,-1],[-1,0]])
+# print mixNE_ZS_p2
+# matrix_p1 = prisoner_dilemma_p1
+# matrix_p2 = prisoner_dilemma_p2
+matrix_p1 = mixNE_ZS_p1
+matrix_p2 = mixNE_ZS_p2
+epochs = 100
+tolerance = .001
+
+eta_recip = np.sqrt(epochs*1./(1-(1/np.sqrt(2))))
+def quad_regularizer(n_vector):
+	nm = np.linalg.norm(n_vector)
+	nm = nm**2
+	return 0.5*nm
+class player():
+
+	def __init__(self, payoff_matrix):
+		self.payoff = payoff_matrix
+		self.action_history = []
+	def add_action(self,action):
+		self.action_history.append(action)
+	def get_dec(self):
+		return self.action_history[-1]
+p1 = player(matrix_p1)
+p2 = player(matrix_p2)
+
+def F_tilde(pl1,pl2,action,which_player_am_I):
+	cumsum = eta_recip*quad_regularizer(action)
+	for i in range(len(pl1.action_history)):
+		if which_player_am_I == 1:
+			cumsum += np.dot(np.dot(action,pl1.payoff),pl2.action_history[i])
+		elif which_player_am_I == 2:
+			cumsum += np.dot(np.dot(action,pl2.payoff),pl1.action_history[i])
+	return cumsum
+
+def argmax_function(first_player,second_player,which_player_am_I):
+	def opt(x):
+		return -F_tilde(first_player,second_player,x,which_player_am_I)
+	
+	def L1_norm_constraint(x):
+		return sum(x)-1
+
+	bounds = [(0,1) for _ in range(2)] #make this adaptive
+
+	amin = scipy.optimize.fmin_slsqp(opt, x0 = [0.5,0.5], eqcons = [L1_norm_constraint], bounds = bounds,iprint=0)
+	# print amin
+	# print opt(amin)
+	# print opt([0,1])
+	g = np.random.rand()
+	# print g
+	cumdum = np.cumsum(amin)
+	act = np.zeros(len(cumdum))
+	for i in range(len(cumdum)):
+		if g<cumdum[i]:
+			act[i]=1
+			break
+	print 'BLAH'
+	print act,amin
+	print opt(amin)
+	print opt([0.25,0.75])
+	# return act
+	return amin
+
+	# return the action * that minimizes F_tilde(pl1,pl2,*,which_player_am_I)
+def update_FTRL(pl1,pl2):
+	newp1act = argmax_function(pl1,pl2,1)
+	newp2act = argmax_function(pl1,pl2,2)
+	pl1.add_action(newp1act)
+	pl2.add_action(newp2act)
+	return pl1,pl2
+def find_Nash(p1,p2):
+	t=0
+	while t<epochs:
+		if t%50 == 0:
+			print 'TIME '
+			print t
+			print 'TIME '
+			print t
+			print 'TIME '
+			print t
+		p1,p2 = update_FTRL(p1,p2)
+		t+=1
+	return p1.get_dec(),p2.get_dec()
+print find_Nash(p1,p2)
