@@ -5,18 +5,23 @@ prisoner_dilemma_p1 = np.array([[-1,-3],[0,-2]])
 prisoner_dilemma_p2 = np.array([[-1,-3],[0,-2]])
 mixNE_ZS_p1 = np.array([[2,-1],[-1,0]])
 mixNE_ZS_p2 = -1*np.array([[2,-1],[-1,0]])
+battle_sexes_p1 = np.array([[2,0],[0,1]])
+battle_sexes_p2 = np.array([[1,0],[0,2]])
+matrix_p1 = battle_sexes_p1
+matrix_p2 = battle_sexes_p2
 # print mixNE_ZS_p2
 # matrix_p1 = prisoner_dilemma_p1
 # matrix_p2 = prisoner_dilemma_p2
-matrix_p1 = mixNE_ZS_p1
-matrix_p2 = mixNE_ZS_p2
-epochs = 1000
+# matrix_p1 = mixNE_ZS_p1
+# matrix_p2 = mixNE_ZS_p2
+epochs = 500
 tolerance = .001
 
 eta_recip = np.sqrt(2*epochs*1./(1.-(1./2.)))
 
 def quad_regularizer(n_vector):
-	nm = np.linalg.norm(n_vector)
+	# nm = np.linalg.norm(n_vector)
+	nm = np.linalg.norm(n_vector-np.array([0,1]))
 	nm = nm**2
 	return 0.5*nm
 
@@ -34,7 +39,7 @@ class player():
 		vec = vec - self.action_history[0]
 		for vector in self.action_history:
 			vec += vector
-		return vec/(len(self.action_history))
+		return vec*1./(len(self.action_history))
 
 p1 = player(matrix_p1)
 p2 = player(matrix_p2)
@@ -48,7 +53,7 @@ def F_tilde(pl1,pl2,action,which_player_am_I):
 			cumsum += np.dot(np.dot(action,pl2.payoff),pl1.action_history[i])
 	return cumsum
 
-def argmax_function(first_player,second_player,which_player_am_I):
+def argmax_function(first_player,second_player,which_player_am_I,t):
 	def opt(x):
 		return -F_tilde(first_player,second_player,x,which_player_am_I)
 	
@@ -56,26 +61,41 @@ def argmax_function(first_player,second_player,which_player_am_I):
 		return sum(x)-1
 
 	bounds = [(0,1) for _ in range(2)] #make this adaptive
-
-	amin = scipy.optimize.fmin_slsqp(opt, x0 = [0.5,0.5], eqcons = [L1_norm_constraint], bounds = bounds,iprint=0)
-	act = np.random.choice(range(2), amin)
-
+	p = np.random.rand()
+	starting_point = np.array([p,1-p])
+	amin = scipy.optimize.fmin_slsqp(opt, x0 = starting_point, eqcons = [L1_norm_constraint], bounds = bounds,iprint=0)
+	# if t==0:
+	# 	print amin,"TIME ZERO"
+	amin = amin.clip(min=0)
+	amin = amin/sum(amin)
+	#assert(sum(amin)==1)
+	newact = np.random.choice(2, p=amin)
+	act = np.zeros(2)
+	act[newact] = 1
+	#assert(sum(act) == 1)
 	# print act,amin
 	# print opt(amin)
 	# print opt([0.25,0.75])
-	# return act
-	return amin
+	return act
+	# return amin
 
 	# return the action * that minimizes F_tilde(pl1,pl2,*,which_player_am_I)
-def update_FTRL(pl1,pl2):
-	newp1act = argmax_function(pl1,pl2,1)
-	newp2act = argmax_function(pl1,pl2,2)
+def update_FTRL(pl1,pl2,t):
+	newp1act = argmax_function(pl1,pl2,1,t)
+	newp2act = argmax_function(pl1,pl2,2,t)
 	pl1.add_action(newp1act)
 	pl2.add_action(newp2act)
 	return pl1,pl2
 
 def find_Nash(p1,p2):
 	t=0
+	k=10
+	for i in range(k):
+		# p1.add_action(np.array([2./3,1./3]))
+		# p2.add_action(np.array([1./3,2./3]))
+		p1.add_action(np.array([0,1]))
+		p2.add_action(np.array([0,1]))
+		t+=1
 	while t<epochs:
 		if t%50 == 0:
 			print 'TIME '
@@ -84,8 +104,8 @@ def find_Nash(p1,p2):
 			print t
 			print 'TIME '
 			print t
-		p1,p2 = update_FTRL(p1,p2)
+		p1,p2 = update_FTRL(p1,p2,t)
 		t+=1
-	print np.sum(np.transpose(p1.action_history)[0])
+	# print p1.action_history
 	return p1.get_dec(),p2.get_dec(),'AVG',p1.get_avg(),p2.get_avg()
 print find_Nash(p1,p2)
