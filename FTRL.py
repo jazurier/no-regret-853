@@ -7,23 +7,44 @@ mixNE_ZS_p1 = np.array([[2,-1],[-1,0]])
 mixNE_ZS_p2 = -1*np.array([[2,-1],[-1,0]])
 battle_sexes_p1 = np.array([[2,0],[0,1]])
 battle_sexes_p2 = np.array([[1,0],[0,2]])
-matrix_p1 = battle_sexes_p1
-matrix_p2 = battle_sexes_p2
+staghunt_p1 = np.array([[2,0],[1,1]])
+staghunt_p2 = np.array([[2,1],[0,1]])
+
+matrix_p1 = staghunt_p1
+matrix_p2 = staghunt_p2
 # print mixNE_ZS_p2
 # matrix_p1 = prisoner_dilemma_p1
 # matrix_p2 = prisoner_dilemma_p2
 # matrix_p1 = mixNE_ZS_p1
 # matrix_p2 = mixNE_ZS_p2
-epochs = 500
+epochs = 2000
 tolerance = .001
 
-eta_recip = np.sqrt(2*epochs*1./(1.-(1./2.)))
+#eta_recip = np.sqrt(2*epochs*1./(1.-(1./2.)))
 
 def quad_regularizer(n_vector):
 	# nm = np.linalg.norm(n_vector)
-	nm = np.linalg.norm(n_vector-np.array([0,1]))
+	nm = np.linalg.norm(n_vector-np.array([0.65,0]))
 	nm = nm**2
 	return 0.5*nm
+
+
+def L1_norm_constraint(x):
+	return sum(x)-1
+
+def starting_point():
+	p = np.random.rand()
+	return np.array([p,1-p])
+
+bounds = [(0,1) for _ in range(2)] #make this adaptive
+
+quad_argmin= scipy.optimize.fmin_slsqp(quad_regularizer, x0 = starting_point(), eqcons = [L1_norm_constraint], bounds = bounds)
+quad_min = quad_regularizer(quad_argmin)
+
+quad_argmax = scipy.optimize.fmin_slsqp(lambda x: -quad_regularizer(x), x0 = starting_point(), eqcons = [L1_norm_constraint], bounds = bounds)
+quad_max = quad_regularizer(quad_argmax)
+
+eta_recip = np.sqrt(epochs)/(quad_max-quad_min)
 
 class player():
 
@@ -35,7 +56,7 @@ class player():
 	def get_dec(self):
 		return self.action_history[-1]
 	def get_avg(self):
-		vec = self.action_history[0]
+		vec = self.action_history[0]*1.
 		vec = vec - self.action_history[0]
 		for vector in self.action_history:
 			vec += vector
@@ -89,7 +110,7 @@ def update_FTRL(pl1,pl2,t):
 
 def find_Nash(p1,p2):
 	t=0
-	k=10
+	k=0
 	for i in range(k):
 		# p1.add_action(np.array([2./3,1./3]))
 		# p2.add_action(np.array([1./3,2./3]))
@@ -100,10 +121,10 @@ def find_Nash(p1,p2):
 		if t%50 == 0:
 			print 'TIME '
 			print t
-			print 'TIME '
-			print t
-			print 'TIME '
-			print t
+			# print 'TIME '
+			# print t
+			# print 'TIME '
+			# print t
 		p1,p2 = update_FTRL(p1,p2,t)
 		t+=1
 	# print p1.action_history
