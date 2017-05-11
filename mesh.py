@@ -7,7 +7,7 @@ import plotly.plotly as py
 import plotly.tools as tls
 from plotly.tools import FigureFactory as FF
 
-mesh_x_axis = np.arange(0,1.1,.5)
+mesh_x_axis = np.arange(0,1.1,.1)
 mesh = np.transpose([np.tile(mesh_x_axis, len(mesh_x_axis)), np.repeat(mesh_x_axis, len(mesh_x_axis))])
 # print mesh
 
@@ -44,18 +44,29 @@ if __name__=="__main__":
 	epochs = 100
 	staghunt_p1 = np.array([[2,0],[1,1]])
 	staghunt_p2 = np.array([[2,1],[0,1]])
+	stag_nashes = [[0,1,0,1],[1,0,1,0],[.5,.5,.5,.5]]
 	prisoner_dilemma_p1 = np.array([[-1,-3],[0,-2]])
 	prisoner_dilemma_p2 = np.array([[-1,-3],[0,-2]])
+	prisoner_dilemma_nashes = [[0,1,0,1]]
+	mixNE_ZS_p1 = np.array([[2,-1],[-1,0]])
+	mixNE_ZS_p2 = -1*np.array([[2,-1],[-1,0]])
+	mixNE_ZS_nashes = [[.25,.75,.25,.75]]
+	battle_sexes_p1 = np.array([[2,0],[0,1]])
+	battle_sexes_p2 = np.array([[1,0],[0,2]])
+	battle_sexes_nashes = [[0,1,0,1],[1,0,1,0],[2./3,1./3,1./3,2./3]]
 	# matrix_p1 = staghunt_p1
 	# matrix_p2 = staghunt_p2
- 	matrix_p1 = prisoner_dilemma_p1
- 	matrix_p2 = prisoner_dilemma_p2
-
-	# nashes = [[0,1,0,1],[1,0,1,0],[.5,.5,.5,.5]]
-	nashes = [[0,1,0,1]]
+ 	# matrix_p1 = prisoner_dilemma_p1
+ 	# matrix_p2 = prisoner_dilemma_p2
+ 	# matrix_p1 = mixNE_ZS_p1
+ 	# matrix_p2 = mixNE_ZS_p2
+ 	# nashes = mixNE_ZS_nashes
+ 	matrix_p1 = battle_sexes_p1
+ 	matrix_p2 = battle_sexes_p2
+ 	nashes = battle_sexes_nashes
 	nashes_tup = [tuple(x) for x in nashes]
-	# color = ['red','blue','green']
-	color = ['red']
+	color = ['red','blue','green']
+	color = color[:len(nashes)]
 	nash_to_color = dict(zip(nashes_tup,color))
 
 
