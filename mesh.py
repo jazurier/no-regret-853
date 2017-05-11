@@ -18,8 +18,13 @@ def project(u):
 		return np.array([u[0],u[2]])
 
 def get_limit(matrix_p1, matrix_p2, bias_p1,bias_p2,epochs,nashes,mid_epoch_check=None):
-	player1 = player(identity=0, n_actions = 2, payoff_matrix = matrix_p1,regularizer=FTRL.quad_regularizer,epochs=epochs,regularizer_bias=bias_p1)
-	player2 = player(identity = 1, n_actions = 2, payoff_matrix = matrix_p2,regularizer=FTRL.quad_regularizer,epochs=epochs,regularizer_bias=bias_p2)
+	
+	try:
+		player1 = player(identity=0, n_actions = 2, payoff_matrix = matrix_p1,regularizer=FTRL.quad_regularizer,epochs=epochs,regularizer_bias=bias_p1)
+		player2 = player(identity = 1, n_actions = 2, payoff_matrix = matrix_p2,regularizer=FTRL.quad_regularizer,epochs=epochs,regularizer_bias=bias_p2)
+	except:
+		return (None, None)
+	
 	mid_check = None
 	#bias for FTPL
 	#for _ in range(int(epochs/2.)):
@@ -41,7 +46,7 @@ def get_limit(matrix_p1, matrix_p2, bias_p1,bias_p2,epochs,nashes,mid_epoch_chec
 
 
 if __name__=="__main__":
-	epochs = 100
+	epochs = 200
 	staghunt_p1 = np.array([[2,0],[1,1]])
 	staghunt_p2 = np.array([[2,1],[0,1]])
 	stag_nashes = [[0,1,0,1],[1,0,1,0],[.5,.5,.5,.5]]
@@ -54,16 +59,17 @@ if __name__=="__main__":
 	battle_sexes_p1 = np.array([[2,0],[0,1]])
 	battle_sexes_p2 = np.array([[1,0],[0,2]])
 	battle_sexes_nashes = [[0,1,0,1],[1,0,1,0],[2./3,1./3,1./3,2./3]]
-	# matrix_p1 = staghunt_p1
-	# matrix_p2 = staghunt_p2
+	matrix_p1 = staghunt_p1
+	matrix_p2 = staghunt_p2
+	nashes = stag_nashes
  	# matrix_p1 = prisoner_dilemma_p1
  	# matrix_p2 = prisoner_dilemma_p2
  	# matrix_p1 = mixNE_ZS_p1
  	# matrix_p2 = mixNE_ZS_p2
  	# nashes = mixNE_ZS_nashes
- 	matrix_p1 = battle_sexes_p1
- 	matrix_p2 = battle_sexes_p2
- 	nashes = battle_sexes_nashes
+ 	#matrix_p1 = battle_sexes_p1
+ 	#matrix_p2 = battle_sexes_p2
+ 	#nashes = battle_sexes_nashes
 	nashes_tup = [tuple(x) for x in nashes]
 	color = ['red','blue','green']
 	color = color[:len(nashes)]
@@ -84,7 +90,6 @@ if __name__=="__main__":
 		bias_p2 = np.array([point[1],1-point[1]])
 		# print bias_p1
 		# print bias_p2
-
 		avg_actions, nash = get_limit(matrix_p1, matrix_p2, bias_p1, bias_p2,epochs,nashes,mid_epoch_check=50)
 		print 'avg action', avg_actions
 		print 'nash', nash
