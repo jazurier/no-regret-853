@@ -7,6 +7,10 @@ from FTRL import player
 mesh_x_axis = np.arange(0,1.1,.1)
 mesh = np.transpose([np.tile(mesh_x_axis, len(mesh_x_axis)), np.repeat(mesh_x_axis, len(mesh_x_axis))])
 # print mesh
+
+def project(u):
+	return np.array([u[0][0],u[1][0]])
+
 def get_limit(matrix_p1, matrix_p2, bias_p1,bias_p2,epochs,nashes,mid_epoch_check=None):
 	player1 = player(identity=0, n_actions = 2, payoff_matrix = matrix_p1,regularizer=FTRL.quad_regularizer,epochs=epochs,regularizer_bias=bias_p1)
 	player2 = player(identity = 1, n_actions = 2, payoff_matrix = matrix_p2,regularizer=FTRL.quad_regularizer,epochs=epochs,regularizer_bias=bias_p2)
