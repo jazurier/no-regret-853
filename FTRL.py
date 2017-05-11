@@ -25,19 +25,22 @@ class player():
 			self.payoff_func = mat_to_payoff
 		self.action_history = []
 		self.weights = None
-	def add_action(self,action):
+		self.ignore=0
+	def add_action(self,action,ignore=False):
 		self.action_history.append(action)
+		if ignore:
+			self.ignore += 1
 	def get_most_recent(self):
 		if len(self.action_history) > 0:
 			return self.action_history[-1]
 		return None
 	def get_avg_action(self):
-		if len(self.action_history) == 0:
+		if len(self.action_history) <= self.ignore:
 			return None
 		vec = np.zeros(self.n_actions)
-		for action in self.action_history:
+		for action in self.action_history[self.ignore:]:
 			vec += action
-		return vec/float(len(self.action_history))
+		return vec/float(len(self.action_history[self.ignore:]))
 
 def entropic_regularizer(n_vector):
 	s = 0
@@ -220,10 +223,13 @@ def MWU(players, epochs, tick):
 		action_vec[action] = 1
 		p.add_action(action_vec)
 
-def closest_nash(nashes, players):
+def closest_nash(nashes, players,avg=False):
 	actions = []
 	for player in players:
-		ac = player.get_most_recent()
+		if avg:
+			ac = player.get_avg_action()
+		else:
+			ac = player.get_most_recent()
 		if ac is None:
 			return None
 		actions.extend(ac)
@@ -342,7 +348,7 @@ if __name__ == '__main__':
 	#player2 = player(identity=1, n_actions=2, payoff_func=chasing_p2,regularizer=quad_regularizer, epochs=epochs)
 	#players = [player1,player2]
 	
-	nashes = [[0,1.,0.,1.],[1.,0,1.,0.],[0.5,0.5]]
+	nashes = [[0,1.,0.,1.],[1.,0,1.,0.],[0.5,0.5,0.5,0.5]]
 	colors = ['blue','green','red']
 	###FOR ALL GAMES#############################
 	for i in range(epochs):	
