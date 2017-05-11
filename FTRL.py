@@ -16,7 +16,7 @@ class player():
 		else:
 			self.regularizer = regularizer
 		self.eta_recip = calculate_eta(n_actions, regularizer,epochs)
-		print 'eta', self.eta_recip
+		#print 'eta', self.eta_recip
 		self.payoff_matrix = payoff_matrix
 		self.payoff_func = payoff_func
 		if self.payoff_matrix is not None and self.payoff_func is None:
@@ -28,7 +28,9 @@ class player():
 	def add_action(self,action):
 		self.action_history.append(action)
 	def get_most_recent(self):
-		return self.action_history[-1]
+		if len(self.action_history) > 0:
+			return self.action_history[-1]
+		return None
 	def get_avg_action(self):
 		if len(self.action_history) == 0:
 			return None
@@ -118,11 +120,11 @@ def find_opt_distribution(players, p,box=False):
 	opt_dist = opt_dist/sum(opt_dist)
 	return opt_dist
 
-def update_FTRL(players, tick,box=False):
+def update_FTRL(players, tick,box=False,mixed=False):
 	for p in players:
 		opt_dist = find_opt_distribution(players, p, box)
 		#print 'opt dist', opt_dist
-		if box:
+		if box or mixed:
 			p.add_action(opt_dist)
 			continue
 		#print p.id, opt_dist
@@ -165,7 +167,7 @@ def update_FTPL(players, epochs, tick):
 				best_action = action
 				best_action_reward = reward
 
-		assert(best_action != None)
+		assert(best_action is not None)
 		p.add_action(best_action)
 
 def reward(all_players, player, action, tick): 
@@ -218,6 +220,34 @@ def MWU(players, epochs, tick):
 		action_vec[action] = 1
 		p.add_action(action_vec)
 
+def closest_nash(nashes, players):
+	actions = []
+	for player in players:
+		ac = player.get_most_recent()
+		if ac is None:
+			return None
+		actions.extend(ac)
+	actions = np.array(actions)
+
+	for nash in nashes:
+		nash = np.asarray(nash)
+		dist = float('inf')
+		closest = None
+		for nash in nashes:
+			d = np.linalg.norm(actions-nash)
+			if d < dist: 
+				dist = d 
+				closest = nash
+	return closest
+
+def nash_distance(nash, players):
+	actions = []
+	for player in players:
+		actions.extend(player.get_most_recent())
+	actions = np.asarray(actions)
+	nash = np.asarray(nash)
+	return np.linalg.norm(nash-actions)
+
 if __name__ == '__main__':
 	epochs = 500
 
@@ -231,8 +261,8 @@ if __name__ == '__main__':
 	staghunt_p1 = np.array([[2,0],[1,1]])
 	staghunt_p2 = np.array([[2,1],[0,1]])
 
-	matrix_p1 = #staghunt_p1#battle_sexes_p1 #mixNE_ZS_p1 #prisoner_dilemma_p1
-	matrix_p2 = #staghunt_p2 #battle_sexes_p2 #mixNE_ZS_p2 #prisoner_dilemma_p2
+	matrix_p1 = staghunt_p1#battle_sexes_p1 #mixNE_ZS_p1 #prisoner_dilemma_p1
+	matrix_p2 = staghunt_p2 #battle_sexes_p2 #mixNE_ZS_p2 #prisoner_dilemma_p2
 
 	# def quad_reg_bias1():
 	# 	nm = np.linalg.norm(n_vector)
@@ -312,19 +342,25 @@ if __name__ == '__main__':
 	#player2 = player(identity=1, n_actions=2, payoff_func=chasing_p2,regularizer=quad_regularizer, epochs=epochs)
 	#players = [player1,player2]
 	
+	nashes = [[0,1.,0.,1.],[1.,0,1.,0.],[0.5,0.5]]
+	colors = ['blue','green','red']
 	###FOR ALL GAMES#############################
 	for i in range(epochs):	
 		if i % 20 == 0:
 			print 'iteration',  i
 		if i % 60 == 0:
-			print 'average actions'
 			for p in players:
-				print p.get_avg_action()
+				print 'most recent', p.get_most_recent()
+			print closest_nash(nashes, players)
+		if i == 100:
+			cn = closest_nash(nashes,players)
+			conv_norm = nash_distance(cn, players)
+
 		#if i % 20 >= 5 and i%20 <= 10: #to check for correlated/coarse-correlated equilibria
 		#	print 'recent actions'
 		#	for p in players:
 		#		print p.get_most_recent()
-		update_FTRL(players, tick=i, box=False)
+		update_FTRL(players, tick=i, box=False,mixed=True)
 		#update_FTPL(players, epochs=epochs,tick=i)
 		#EWU(players, epochs=epochs, tick=i)
 		#MWU(players, epochs=epochs, tick=i)
@@ -333,4 +369,6 @@ if __name__ == '__main__':
 
 	print 'final'
 	for p in players:
-		print p.get_avg_action()
+		print 'average action', p.get_avg_action()
+
+	print closest_nash(nashes,players)
