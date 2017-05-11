@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 mesh_x_axis = np.arange(0,1.1,.1)
 mesh = np.transpose([np.tile(mesh_x_axis, len(mesh_x_axis)), np.repeat(mesh_x_axis, len(mesh_x_axis))])
 # print mesh
+plt.setmarker()
 def get_limit(a,b):
 	# you should have this call the Nash eq thing
 	return 'ro'
@@ -15,3 +16,8 @@ for point in mesh:
 
 	plt.plot(point[0],point[1],color)
 plt.show()
+
+
+
+def project(u):
+	return np.array([u[0][0],u[1][0]])
