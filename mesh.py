@@ -110,5 +110,6 @@ if __name__=="__main__":
 		u.append(vector_to_plot[0])
 		v.append(vector_to_plot[1])
 
-	plt.quiver(x,y,u,v)
+	# plt.quiver(x,y,u,v)
+	plt.quiver(x,y,u,v,angles='xy', scale_units='xy', scale=1.)
 	plt.show()
