@@ -92,6 +92,18 @@ def calculate_eta(DIM, regularizer, epochs):
 	argmax = scipy.optimize.fmin_slsqp(lambda x: -regularizer(x), x0 = starting_point, eqcons = [L1_norm_constraint], bounds = bounds,iprint=0)
 	rmax = regularizer(argmax)
 
+	while (rmax-rmin)==0.:
+		starting_point = simplex_sample(DIM)
+		print 'eta recip is fucking up'
+		print starting_point
+		argmin= scipy.optimize.fmin_slsqp(regularizer, x0 = starting_point, eqcons = [L1_norm_constraint], bounds = bounds,iprint=0)
+		rmin = regularizer(argmin)
+
+		argmax = scipy.optimize.fmin_slsqp(lambda x: -regularizer(x), x0 = starting_point, eqcons = [L1_norm_constraint], bounds = bounds,iprint=0)
+		rmax = regularizer(argmax)
+		print argmin
+		print argmax
+
 	#print 'argmin, argmix', argmin, argmax
 	eta_recip = np.sqrt(float(epochs)/(rmax-rmin))
 	return eta_recip
