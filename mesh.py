@@ -3,9 +3,7 @@ import matplotlib.pyplot as plt
 import FTRL
 import sys
 from FTRL import player
-import plotly.plotly as py
-import plotly.tools as tls
-from plotly.tools import FigureFactory as FF
+
 
 mesh_x_axis = np.arange(0,1.1,.1)
 mesh = np.transpose([np.tile(mesh_x_axis, len(mesh_x_axis)), np.repeat(mesh_x_axis, len(mesh_x_axis))])
@@ -44,7 +42,7 @@ def get_limit(matrix_p1, matrix_p2, bias_p1,bias_p2,epochs,nashes,mid_epoch_chec
 		print 'most recent ac', p.get_most_recent()
 		last_action.append(p.get_most_recent())
 
-	return (mid_check, last_action, FTRL.closest_nash(nashes,players,avg=True))
+	return (mid_check, last_action, FTRL.closest_nash(nashes,players,avg=False))
 
 
 if __name__=="__main__":
