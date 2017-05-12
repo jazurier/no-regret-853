@@ -93,7 +93,7 @@ if __name__=="__main__":
 		# print bias_p1
 		# print bias_p2
 		mid_epoch_actions, last_actions, nash = get_limit(matrix_p1, matrix_p2, bias_p1, bias_p2,epochs,nashes,mid_epoch_check=50)
-		print 'avg action', avg_actions
+		print 'mid epoch action', mid_epoch_actions
 		print 'nash', nash
 		try: 
 			color = nash_to_color[tuple(nash)]
