@@ -46,7 +46,7 @@ def get_limit(matrix_p1, matrix_p2, bias_p1,bias_p2,epochs,nashes,mid_epoch_chec
 
 
 if __name__=="__main__":
-	epochs = 200
+	epochs = 500
 	staghunt_p1 = np.array([[2,0],[1,1]])
 	staghunt_p2 = np.array([[2,1],[0,1]])
 	stag_nashes = [[0,1,0,1],[1,0,1,0],[.5,.5,.5,.5]]
