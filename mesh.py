@@ -37,16 +37,18 @@ def get_limit(matrix_p1, matrix_p2, bias_p1,bias_p2,epochs,nashes,mid_epoch_chec
 		if i == mid_epoch_check:
 			mid_check = []
 			for p in players:
-				mid_check.append(p.get_avg_action())
+				mid_check.append(p.get_most_recent())
 	
+	last_action = []
 	for p in players:
-		print 'avg ac', p.get_avg_action()
+		print 'most recent ac', p.get_most_recent()
+		last_action.append(p.get_most_recent())
 
-	return (mid_check, FTRL.closest_nash(nashes,players,avg=True))
+	return (mid_check, last_action, FTRL.closest_nash(nashes,players,avg=True))
 
 
 if __name__=="__main__":
-	epochs = 500
+	epochs = 50
 	staghunt_p1 = np.array([[2,0],[1,1]])
 	staghunt_p2 = np.array([[2,1],[0,1]])
 	stag_nashes = [[0,1,0,1],[1,0,1,0],[.5,.5,.5,.5]]
@@ -90,7 +92,7 @@ if __name__=="__main__":
 		bias_p2 = np.array([point[1],1-point[1]])
 		# print bias_p1
 		# print bias_p2
-		avg_actions, nash = get_limit(matrix_p1, matrix_p2, bias_p1, bias_p2,epochs,nashes,mid_epoch_check=50)
+		mid_epoch_actions, last_actions, nash = get_limit(matrix_p1, matrix_p2, bias_p1, bias_p2,epochs,nashes,mid_epoch_check=50)
 		print 'avg action', avg_actions
 		print 'nash', nash
 		try: 
@@ -102,7 +104,7 @@ if __name__=="__main__":
 			print 'error', sys.exc_info()[0]
 
 		point_to_plot = np.array([point[0],point[1]])
-		vector_to_plot = np.subtract(project(avg_actions),point_to_plot)
+		vector_to_plot = np.subtract(project(last_actions),point_to_plot)
 		x.append(point_to_plot[0])
 		y.append(point_to_plot[1])
 		u.append(vector_to_plot[0])
