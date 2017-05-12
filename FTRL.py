@@ -7,15 +7,16 @@ class player():
 	def __init__(self, identity, n_actions,regularizer,epochs,payoff_matrix=None,payoff_func=None,regularizer_bias=None):
 		self.id = identity
 		self.n_actions = n_actions
-		self.regularizer_bias = regularizer_bias
+		self.regularizer_bias = np.array(regularizer_bias)
 		if regularizer_bias is not None:
+			#print 'bias not none'
 			#regularizer_bias = [1./(self.n_actions) for _ in range(self.n_actions)]
 			def biased_regularizer(n_vector):
 				return regularizer(n_vector-self.regularizer_bias)
 			self.regularizer = biased_regularizer
 		else:
 			self.regularizer = regularizer
-		self.eta_recip = calculate_eta(n_actions, regularizer,epochs)
+		self.eta_recip = calculate_eta(n_actions, self.regularizer,epochs,self.regularizer_bias)
 		#print 'eta', self.eta_recip
 		self.payoff_matrix = payoff_matrix
 		self.payoff_func = payoff_func
@@ -65,6 +66,7 @@ def simplex_sample(DIM):
 		prob.append(samples[i]-samples[i-1])
 	assert(sum(prob) == 1.)
 	return prob
+
 def find_argmin_concave(regularizer,num_dimensions):
 	currentmin = 100
 	currentargmin = np.zeros(num_dimensions)
@@ -76,9 +78,16 @@ def find_argmin_concave(regularizer,num_dimensions):
 			currentargmin = u
 	return currentargmin
 
-def calculate_eta(DIM, regularizer, epochs):
+def calculate_eta(DIM, regularizer, epochs,bias):
 	#eta_recip = np.sqrt(2*epochs*1./(1.-(1./2.)))
 	#print 'hi', eta_recip
+	if bias is not None: #be careeful with this
+		argmin = find_argmin_concave(regularizer,DIM)
+		argmax = bias
+		rmin = regularizer(argmin)
+		rmax = regularizer(argmax)
+		return  (np.sqrt(float(epochs)/(rmax-rmin)))
+
 	def L1_norm_constraint(x):
 		return sum(x)-1
 
@@ -93,22 +102,50 @@ def calculate_eta(DIM, regularizer, epochs):
 	rmax = regularizer(argmax)
 
 	while (rmax-rmin)==0.:
-		starting_point = simplex_sample(DIM)
-		print 'eta recip is fucking up'
-		print starting_point
-		argmin= scipy.optimize.fmin_slsqp(regularizer, x0 = starting_point, eqcons = [L1_norm_constraint], bounds = bounds,iprint=0)
-		rmin = regularizer(argmin)
+		print 'scipy fucked up'
+		argmin = find_argmin_concave(regularizer,DIM)
+		# starting_point = simplex_sample(DIM)
+		# print 'eta recip is fucking up'
+		# print starting_point
+		# argmin= scipy.optimize.fmin_slsqp(regularizer, x0 = starting_point, eqcons = [L1_norm_constraint], bounds = bounds,iprint=0)
+		# rmin = regularizer(argmin)
 
-		argmax = scipy.optimize.fmin_slsqp(lambda x: -regularizer(x), x0 = starting_point, eqcons = [L1_norm_constraint], bounds = bounds,iprint=0)
-		rmax = regularizer(argmax)
-		print argmin
-		print argmax
+		# argmax = scipy.optimize.fmin_slsqp(lambda x: -regularizer(x), x0 = starting_point, eqcons = [L1_norm_constraint], bounds = bounds,iprint=0)
+		# rmax = regularizer(argmax)
+		# print argmin
+		# print argmax
 
+	#joe_argmin = find_argmin_concave(regularizer, DIM)
+	#print 'argmin', argmin
+	#print 'joe argmin', joe_argmin
+	#print regularizer(argmin)
+	#print regularizer(joe_argmin)
+	#print regularizer
 	#print 'argmin, argmix', argmin, argmax
+	#if bias:
+		#assert(np.linalg.norm(argmax - bias) < 1e-4)
+		#assert(np.linalg.norm(argmin - find_argmin_concave(regularizer,DIM)) < 1e-4)
+
 	eta_recip = np.sqrt(float(epochs)/(rmax-rmin))
 	return eta_recip
 
-def F_tilde(all_players, player, action):
+def F_tilde(all_players, player, action,tick=None):
+	#CHANGE THIS
+	#other_player_average = all_players[abs(player.id-1)].get_avg_action()
+	#if other_player_average is None:
+	#	return player.eta_recip*player.regularizer(action)
+	#return len(player.action_history)*player.payoff_func(action, [other_player_average])+player.eta_recip*player.regularizer(action)
+
+	# if tick == 20 and player.id == 1:
+	# 	print 'evaluating', action
+	# 	oa = all_players[0].get_avg_action()
+	# 	print 'average action', len(all_players[0].action_history)*player.payoff_func(action, [oa])
+	# 	print 'what FTILDE SHOULD BE', len(all_players[0].action_history)*player.payoff_func(action, [oa])+player.eta_recip*player.regularizer(action)
+		#print 'id', player.id
+		#print 'action', action
+		#print 'regularizer in F tilde', player.regularizer(action)
+		#print 'ALERT for p2', -0.5*np.linalg.norm(action-np.array([0.1,0.9]))**2
+		#print 'ALERT for p1', -0.5*np.linalg.norm(action-np.array([0.3,0.7]))**2
 	s = player.eta_recip*player.regularizer(action)
 	for i in range(len(player.action_history)): 
 		other_actions = []
@@ -117,6 +154,8 @@ def F_tilde(all_players, player, action):
 				continue
 			other_actions.append(p.action_history[i]) #list of action histories
 		s += player.payoff_func(action, other_actions)
+	# if tick == 20 and player.id == 1:
+	# 	print 'ALERT', s
 	return s
 
 def find_opt_distribution(players, p,box=False):
@@ -149,18 +188,25 @@ def update_FTRL(players, tick,box=False,mixed=False):
 	for p in players:
 		opt_dist = find_opt_distribution(players, p, box)
 		#print 'opt dist', opt_dist
+		# if tick == 20:
+		# 	print 'player id, opt dist', p.id, opt_dist
+		# 	print 'F tilde opt_dist', F_tilde(players, p, opt_dist,tick=20)
+		# 	print 'F tilde of 0,1', F_tilde(players, p, np.array([0.,1.]),tick=20)
+		# 	print 'average action', p.get_avg_action()
+		# 	if p.id == 1:
+		# 		print players[0].get_avg_action()
+
 		if box or mixed:
 			p.add_action(opt_dist)
 			continue
-		#print p.id, opt_dist
-		#print 'F tilde opt_dist', F_tilde(players, p, opt_dist)
-		#correct = np.zeros(len(opt_dist))
-		#correct[1] = 1.
-		#print p.payoff_func()
-		#print 'F tilde correct', F_tilde(players, p, correct)
-		#print 'action history', len(p.action_history)
-		#print 'average action', p.get_avg_action()
-		#print 'identity', p.id
+
+			#correct = np.zeros(len(opt_dist))
+			#correct[1] = 1.
+			#print p.payoff_func()
+			#print 'F tilde correct', F_tilde(players, p, correct)
+			#print 'action history', len(p.action_history)
+			#print 'average action', p.get_avg_action()
+			#print 'identity', p.id
 		action = np.random.choice(len(opt_dist),p=opt_dist)
 		action_vec = np.zeros(len(opt_dist))
 		action_vec[action] = 1
@@ -277,28 +323,28 @@ def nash_distance(nash, players):
 	return np.linalg.norm(nash-actions)
 
 if __name__ == '__main__':
-	epochs = 500
+	epochs = 50
 
 	#####MATRIX GAMES###########################
-	prisoner_dilemma_p1 = np.array([[-1,-3],[0,-2]])
-	prisoner_dilemma_p2 = np.array([[-1,-3],[0,-2]])
-	mixNE_ZS_p1 = np.array([[2,-1],[-1,0]])
-	mixNE_ZS_p2 = -1*np.array([[2,-1],[-1,0]])
-	battle_sexes_p1 = np.array([[2,0],[0,1]])
-	battle_sexes_p2 = np.array([[1,0],[0,2]])
 	staghunt_p1 = np.array([[2,0],[1,1]])
 	staghunt_p2 = np.array([[2,1],[0,1]])
+	stag_nashes = [[0,1,0,1],[1,0,1,0],[.5,.5,.5,.5]]
+	prisoner_dilemma_p1 = np.array([[-1,-3],[0,-2]])
+	prisoner_dilemma_p2 = np.array([[-1,-3],[0,-2]])
+	prisoner_dilemma_nashes = [[0,1,0,1]]
+	mixNE_ZS_p1 = np.array([[2,-1],[-1,0]])
+	mixNE_ZS_p2 = -1*np.array([[2,-1],[-1,0]])
+	mixNE_ZS_nashes = [[.25,.75,.25,.75]]
+	battle_sexes_p1 = np.array([[2,0],[0,1]])
+	battle_sexes_p2 = np.array([[1,0],[0,2]])
+	battle_sexes_nashes = [[0,1,0,1],[1,0,1,0],[2./3,1./3,1./3,2./3]]
 
-	matrix_p1 = staghunt_p1#battle_sexes_p1 #mixNE_ZS_p1 #prisoner_dilemma_p1
-	matrix_p2 = staghunt_p2 #battle_sexes_p2 #mixNE_ZS_p2 #prisoner_dilemma_p2
+	matrix_p1 = staghunt_p1
+	matrix_p2 = staghunt_p2
+	nashes = stag_nashes
 
-	# def quad_reg_bias1():
-	# 	nm = np.linalg.norm(n_vector)
-	# 	nm = nm**2
-	# 	return -0.5*nm
-
-	player1 = player(identity=0, n_actions = 2, payoff_matrix = matrix_p1,regularizer=quad_regularizer,epochs=epochs,regularizer_bias=[0.5,0.5])
-	player2 = player(identity = 1, n_actions = 2, payoff_matrix = matrix_p2,regularizer=quad_regularizer,epochs=epochs,regularizer_bias=[0.5,0.5])
+	player1 = player(identity=0, n_actions = 2, payoff_matrix = matrix_p1,regularizer=quad_regularizer,epochs=epochs,regularizer_bias=[0.3,0.7])
+	player2 = player(identity = 1, n_actions = 2, payoff_matrix = matrix_p2,regularizer=quad_regularizer,epochs=epochs,regularizer_bias=[0.1,0.9])
 	players = [player1, player2]
 
 	###########POLICE GAME###############
@@ -376,13 +422,15 @@ if __name__ == '__main__':
 	for i in range(epochs):	
 		if i % 20 == 0:
 			print 'iteration',  i
+			for p in players:
+				print 'most recent', p.get_most_recent()
 		if i % 60 == 0:
 			for p in players:
 				print 'most recent', p.get_most_recent()
-			print closest_nash(nashes, players)
-		if i == 100:
-			cn = closest_nash(nashes,players)
-			conv_norm = nash_distance(cn, players)
+			#print closest_nash(nashes, players)
+		#if i == 100:
+		#	cn = closest_nash(nashes,players)
+		#	conv_norm = nash_distance(cn, players)
 
 		#if i % 20 >= 5 and i%20 <= 10: #to check for correlated/coarse-correlated equilibria
 		#	print 'recent actions'
@@ -397,6 +445,9 @@ if __name__ == '__main__':
 
 	print 'final'
 	for p in players:
-		print 'average action', p.get_avg_action()
+		#print 'average action', p.get_avg_action()
+		print 'final most recent action', p.get_most_recent()
+		print p.action_history
+		print '++++++++++++++++='
 
-	print closest_nash(nashes,players)
+	#print closest_nash(nashes,players)

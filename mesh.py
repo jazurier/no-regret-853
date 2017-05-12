@@ -44,7 +44,7 @@ def get_limit(matrix_p1, matrix_p2, bias_p1,bias_p2,epochs,nashes,mid_epoch_chec
 		print 'most recent ac', p.get_most_recent()
 		last_action.append(p.get_most_recent())
 
-	return (mid_check, last_action, FTRL.closest_nash(nashes,players,avg=True))
+	return (mid_check, last_action, FTRL.closest_nash(nashes,players,avg=False))
 
 
 if __name__=="__main__":
