@@ -65,6 +65,16 @@ def simplex_sample(DIM):
 		prob.append(samples[i]-samples[i-1])
 	assert(sum(prob) == 1.)
 	return prob
+def find_argmin_concave(regularizer,num_dimensions):
+	currentmin = 100
+	currentargmin = np.zeros(num_dimensions)
+	for k in range(num_dimensions):
+		u = np.zeros(num_dimensions)
+		u[k]=1
+		if regularizer(u)<currentmin:
+			currentmin = regularizer(u)
+			currentargmin = u
+	return currentargmin
 
 def calculate_eta(DIM, regularizer, epochs):
 	#eta_recip = np.sqrt(2*epochs*1./(1.-(1./2.)))
