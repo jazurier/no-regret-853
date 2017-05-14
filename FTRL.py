@@ -7,7 +7,10 @@ class player():
 	def __init__(self, identity, n_actions,regularizer,epochs,payoff_matrix=None,payoff_func=None,regularizer_bias=None):
 		self.id = identity
 		self.n_actions = n_actions
-		self.regularizer_bias = np.array(regularizer_bias)
+		if regularizer_bias is None:
+			self.regularizer_bias = None
+		else:
+			self.regularizer_bias = np.array(regularizer_bias)
 		if regularizer_bias is not None:
 			#print 'bias not none'
 			#regularizer_bias = [1./(self.n_actions) for _ in range(self.n_actions)]

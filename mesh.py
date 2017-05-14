@@ -5,8 +5,14 @@ import sys
 from FTRL import player
 
 
-mesh_x_axis = np.arange(0,1.1,.1)
-mesh = np.transpose([np.tile(mesh_x_axis, len(mesh_x_axis)), np.repeat(mesh_x_axis, len(mesh_x_axis))])
+# mesh_x_axis = np.arange(0,1.1,.1)
+# mesh = np.transpose([np.tile(mesh_x_axis, len(mesh_x_axis)), np.repeat(mesh_x_axis, len(mesh_x_axis))])
+mesh_x_axis = np.arange(.567,.5691,.0001)
+mesh_y_axis = np.arange(1./3,.1+(1./3),.01)
+mesh_y_axis = np.array([.41+1./300])
+mesh = np.transpose([np.tile(mesh_x_axis, len(mesh_y_axis)), np.repeat(mesh_y_axis, len(mesh_x_axis))])
+
+
 # print mesh
 
 def project(u):
@@ -22,7 +28,7 @@ def get_limit(matrix_p1, matrix_p2, bias_p1,bias_p2,epochs,nashes,mid_epoch_chec
 		player2 = player(identity = 1, n_actions = 2, payoff_matrix = matrix_p2,regularizer=FTRL.quad_regularizer,epochs=epochs,regularizer_bias=bias_p2)
 	except:
 		return (None, None)
-	
+	 
 	mid_check = None
 	#bias for FTPL
 	#for _ in range(int(epochs/2.)):
@@ -46,30 +52,41 @@ def get_limit(matrix_p1, matrix_p2, bias_p1,bias_p2,epochs,nashes,mid_epoch_chec
 
 
 if __name__=="__main__":
-	epochs = 50
-	staghunt_p1 = np.array([[2,0],[1,1]])
-	staghunt_p2 = np.array([[2,1],[0,1]])
-	stag_nashes = [[0,1,0,1],[1,0,1,0],[.5,.5,.5,.5]]
+	epochs = 400
+	SK = 1/0.65 #1.5
+	staghunt_p1 = np.array([[SK,0],[1,1]])
+	staghunt_p2 = np.array([[SK,0],[1,1]])
+	stag_nashes = [[0,1,0,1],[1,0,1,0],[1./SK, 1.-1./SK,1./SK,1.-1./SK]]
 	prisoner_dilemma_p1 = np.array([[-1,-3],[0,-2]])
 	prisoner_dilemma_p2 = np.array([[-1,-3],[0,-2]])
 	prisoner_dilemma_nashes = [[0,1,0,1]]
 	mixNE_ZS_p1 = np.array([[2,-1],[-1,0]])
 	mixNE_ZS_p2 = -1*np.array([[2,-1],[-1,0]])
 	mixNE_ZS_nashes = [[.25,.75,.25,.75]]
-	battle_sexes_p1 = np.array([[2,0],[0,1]])
-	battle_sexes_p2 = np.array([[1,0],[0,2]])
-	battle_sexes_nashes = [[0,1,0,1],[1,0,1,0],[2./3,1./3,1./3,2./3]]
-	matrix_p1 = staghunt_p1
-	matrix_p2 = staghunt_p2
-	nashes = stag_nashes
+	BK = 0.01
+	battle_sexes_p1 = np.array([[BK,0],[0,1]])
+	battle_sexes_p2 = np.array([[1,0],[0,BK]])
+	battle_sexes_nashes = [[0,1,0,1],[1,0,1,0],[BK/(BK+1.),1./(BK+1.),1./(BK+1.),BK/(BK+1.)]]
+	print battle_sexes_nashes
+	police_matrix_p1 = np.array([[0,2],[1,1.5]])
+	police_matrix_p2 = np.array([[0,2],[1,1]])
+	police_nashes = [[0,1,1,0],[1,0,0,1],[0.5, 0.5, 1./3, 2./3]]
+	#exit(0)
+	#matrix_p1 = staghunt_p1
+	#matrix_p2 = staghunt_p2
+	#nashes = stag_nashes
  	# matrix_p1 = prisoner_dilemma_p1
  	# matrix_p2 = prisoner_dilemma_p2
  	# matrix_p1 = mixNE_ZS_p1
  	# matrix_p2 = mixNE_ZS_p2
  	# nashes = mixNE_ZS_nashes
- 	#matrix_p1 = battle_sexes_p1
- 	#matrix_p2 = battle_sexes_p2
- 	#nashes = battle_sexes_nashes
+ 	# matrix_p1 = battle_sexes_p1
+ 	# matrix_p2 = battle_sexes_p2
+ 	# nashes = battle_sexes_nashes
+	matrix_p1 = police_matrix_p1
+ 	matrix_p2 = police_matrix_p2
+ 	nashes = police_nashes
+	
 	nashes_tup = [tuple(x) for x in nashes]
 	color = ['red','blue','green']
 	color = color[:len(nashes)]
@@ -82,7 +99,15 @@ if __name__=="__main__":
 	v = []
 	for nash in nashes:
 		plt.scatter(nash[0],nash[2],s=200,c=nash_to_color[tuple(nash)])
-	# plt.show()
+	# # plt.show()
+	specpoint = [0.6,1./3+7./6*0.1]
+	#specpoint = [0.56815,0.41333333333333333333]
+	spb1 = [specpoint[0],1.-specpoint[0]]
+	spb2 = [specpoint[1],1.-specpoint[1]]
+	mid_epoch_actions, last_actions, nash = get_limit(matrix_p1, matrix_p2,spb1,spb2,epochs,nashes,mid_epoch_check=50)
+	print last_actions
+	print nash
+	exit()
 	
 	for point in mesh:
 		print 'point', point
@@ -91,7 +116,7 @@ if __name__=="__main__":
 		# print bias_p1
 		# print bias_p2
 		mid_epoch_actions, last_actions, nash = get_limit(matrix_p1, matrix_p2, bias_p1, bias_p2,epochs,nashes,mid_epoch_check=50)
-		print 'mid epoch action', mid_epoch_actions
+		#print 'mid epoch action', mid_epoch_actions
 		print 'nash', nash
 		try: 
 			color = nash_to_color[tuple(nash)]
