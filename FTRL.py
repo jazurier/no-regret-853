@@ -20,6 +20,14 @@ class player():
 		else:
 			self.regularizer = regularizer
 		self.eta_recip = calculate_eta(n_actions, self.regularizer,epochs,self.regularizer_bias)
+		print 'player id', self.id
+		print 'eta', self.eta_recip
+		#print 'hi'
+		#if self.id == 0:
+		#	#print 'hHIIII'
+		#	#print type(self.eta_recip)
+		#	self.eta_recip = self.eta_recip*1.01
+		#	#print self.eta_recip
 		#print 'eta', self.eta_recip
 		self.payoff_matrix = payoff_matrix
 		self.payoff_func = payoff_func
@@ -54,6 +62,16 @@ def entropic_regularizer(n_vector):
 		s += p*np.log(p)
 	return -s
 
+def quartic_regularizer(n_vector):
+	x,y = n_vector
+	return -1./2*(x**2+x**4+y**2+y**4)
+
+def exp_bowl_regularizer(n_vector):
+	return 4.*np.exp(-(n_vector[0]/2.)**2 - (n_vector[1])/3.**2)
+
+def uneven_quad_regularizer(n_vector): #defined for a 2 vector
+	return (-1./2)*(25*n_vector[0]**2 + n_vector[1]**2)
+
 def quad_regularizer(n_vector):
 	nm = np.linalg.norm(n_vector)
 	nm = nm**2
@@ -85,10 +103,14 @@ def calculate_eta(DIM, regularizer, epochs,bias):
 	#eta_recip = np.sqrt(2*epochs*1./(1.-(1./2.)))
 	#print 'hi', eta_recip
 	if bias is not None: #be careeful with this
+		#print 'bias', bias
 		argmin = find_argmin_concave(regularizer,DIM)
+		#print argmin
 		argmax = bias
 		rmin = regularizer(argmin)
 		rmax = regularizer(argmax)
+		#print rmax-rmin
+		#print epochs
 		return  (np.sqrt(float(epochs)/(rmax-rmin)))
 
 	def L1_norm_constraint(x):
@@ -132,7 +154,20 @@ def calculate_eta(DIM, regularizer, epochs,bias):
 	eta_recip = np.sqrt(float(epochs)/(rmax-rmin))
 	return eta_recip
 
-def F_tilde(all_players, player, action,tick=None):
+def F_tilde(all_players, player, action,tick=None,matrix_game_speedup=False):
+	#print 'this is in F_tilde, ', matrix_game_speedup
+	#exit()
+	#assert(len(all_players)==2)
+	#also the players should be id 0 and 1 otherwise this does not work
+	if matrix_game_speedup:
+		s = player.eta_recip*player.regularizer(action)
+		if len(player.action_history) == 0:
+			return s
+		other_player_hist = np.array(all_players[abs(player.id-1)].action_history)
+		other_player_avg = np.average(other_player_hist[:len(player.action_history)],axis=0)
+		s += len(player.action_history)*player.payoff_func(action, [other_player_avg])
+		return s
+	
 	#CHANGE THIS
 	#other_player_average = all_players[abs(player.id-1)].get_avg_action()
 	#if other_player_average is None:
@@ -161,7 +196,9 @@ def F_tilde(all_players, player, action,tick=None):
 	# 	print 'ALERT', s
 	return s
 
-def find_opt_distribution(players, p,box=False):
+def find_opt_distribution(players, p,box=False,matrix_game_speedup=False):
+	# print 'this is in find opt dist', matrix_game_speedup
+	# exit()
 	DIM = p.n_actions
 
 	bounds = [(0,1) for _ in range(DIM)]
@@ -178,7 +215,7 @@ def find_opt_distribution(players, p,box=False):
 	#starting_point = simplex_sample(DIM)
 
 	def neg_F_tilde(action): #return negative since scipy.optimze finds argmin
-		return -F_tilde(players,p,action)
+		return -F_tilde(players,p,action,matrix_game_speedup = matrix_game_speedup)
 
 	opt_dist = scipy.optimize.fmin_slsqp(neg_F_tilde,x0=starting_point,eqcons=eqcons,bounds=bounds,iprint=0)
 	if box:
@@ -187,9 +224,11 @@ def find_opt_distribution(players, p,box=False):
 	opt_dist = opt_dist/sum(opt_dist)
 	return opt_dist
 
-def update_FTRL(players, tick,box=False,mixed=False):
+def update_FTRL(players, tick,box=False,mixed=False,matrix_game_speedup=False):
 	for p in players:
-		opt_dist = find_opt_distribution(players, p, box)
+		#print p.id
+		opt_dist = find_opt_distribution(players, p, box,matrix_game_speedup)
+		#print opt_dist
 		#print 'opt dist', opt_dist
 		# if tick == 20:
 		# 	print 'player id, opt dist', p.id, opt_dist
